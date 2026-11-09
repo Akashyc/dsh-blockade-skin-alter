@@ -1,0 +1,6 @@
+# 全鲸封锁 — a client-only bundle row. The browser half stacks an alias-token
+# layer over the active light/dark theme and sets the default font stacks, so
+# nothing about the host composition changes beyond this one row.
+- insert:
+    - id: dsh-blockade-skin-alter
+      name: '@local/dsh-blockade-skin-alter'
