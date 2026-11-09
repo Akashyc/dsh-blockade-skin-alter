@@ -4,7 +4,7 @@ DeepSeek Harness 网页界面的封锁风 HUD 皮肤，从「封锁橙 dsh 皮�
 
 纯客户端插件：只覆盖主题变量、注入一张样式表，不改宿主代码，卸载后恢复原样。要停用皮肤，在插件管理里关掉本插件。
 
-![全鲸封锁：DSH 首页](https://raw.githubusercontent.com/Akashyc/dsh-blockade-skin-alter/main/assets/blockade-skin.webp)
+![全鲸封锁：DSH 首页](https://raw.githubusercontent.com/Akashyc/dsh-blockade-skin-alter/refs/heads/main/assets/blockade-skin.webp)
 
 > 同人作品，非官方。与 Ubisoft、Massive Entertainment 无关。「Tom Clancy's The Division」是其所有者的商标。
 
