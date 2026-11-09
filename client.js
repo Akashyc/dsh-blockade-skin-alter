@@ -1148,6 +1148,25 @@ html:root body[data-hud-lite] [class*="_overlay"]:has([class*="_navList"]) [clas
   color: var(--dsw-alias-label-secondary);
 }
 
+/* 「清除」按钮：只在有内嵌图片时出现，和「选择文件」并排。 */
+.dsh-hud-settings__clear {
+  flex: none;
+  width: 44px;
+  height: 22px;
+  padding: 0;
+  font-size: 10px;
+  color: var(--dsw-alias-label-secondary);
+  background: transparent;
+  border: 0.5px solid var(--dsw-alias-border-l1);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.dsh-hud-settings__clear:hover {
+  color: var(--dsw-alias-label-primary);
+  border-color: var(--dsw-alias-border-l2);
+}
+
 /* Header controls (sidebar toggle, new session, utilities): same hover bar as
    every other interactive surface. */
 /* 侧栏切换按钮除外：Windows 标题栏模式下 DSH 把它 position: fixed 钉在标题栏左上，
@@ -3248,10 +3267,81 @@ html:root body ::-webkit-scrollbar-thumb:active {
 
     function writeHudConfig(patch) {
       const next = Object.assign(readHudConfig(), patch || {});
-      try { localStorage.setItem(HUD_KEY, JSON.stringify(next)); } catch (error) { /* private mode */ }
+      try { localStorage.setItem(HUD_KEY, JSON.stringify(next)); } catch (error) {
+        // localStorage 每站点约 500 万字符，大图的 data URL 会撑爆；别静默吞掉，让用户知道没存上。
+        if (error && error.name === 'QuotaExceededError') {
+          window.alert('设置没保存：本地存储空间不够，多半是自定义背景图太大（建议 3 MB 以内），换张小点的图再试。');
+        }
+      }
       window.dispatchEvent(new CustomEvent('blockade-alter:hud'));
       return next;
     }
+
+    /* bg-apply:start */
+    // 自定义背景：CSS 自定义属性的值有 2 MiB（2,097,152 字符）硬上限，超了整条
+    // 声明会被浏览器静默丢弃、背景回退成深空渐变（不报错也没提示）。所以超过安全
+    // 线的值不再塞进 --hud-bg，而是直接写到背景层的内联 background-image：
+    // 直接声明没有这个上限，几 MB 的 data URL 照样能画。
+    const HUD_BG_VAR_LIMIT = 2090000;
+    let backdropEl = null; // .ba-backdrop 层，由背景 effect 挂上
+    let bgValue = '';      // 当前生效的背景值（归一后）
+    let bgApplied = null;  // 上一次写进页面的值，避免重复塞几 MB 的字符串
+
+    // 背景值归一：裸的 data: URL 自动包成 url("...")，其余（url()、渐变、颜色）原样。
+    function normalizeBg(value) {
+      const bg = String(value == null ? '' : value).trim();
+      if (!bg) return '';
+      if (/^data:/i.test(bg)) return 'url("' + bg + '")';
+      return bg;
+    }
+
+    // 把当前背景值真正写到页面上：小值仍走 --hud-bg（保持原路径），大值走内联。
+    function syncBackground() {
+      const bg = bgValue;
+      const root = document.documentElement.style;
+      if (!bg) root.removeProperty('--hud-bg');
+      else if (bg.length <= HUD_BG_VAR_LIMIT) root.setProperty('--hud-bg', bg);
+      else root.removeProperty('--hud-bg');
+      if (!backdropEl) return;
+      if (bg) backdropEl.style.setProperty('background-image', bg);
+      else {
+        backdropEl.style.removeProperty('background-image');
+        // 清空后别在元素上留个空的 style="" 属性。
+        if (!backdropEl.style.length) backdropEl.removeAttribute('style');
+      }
+    }
+
+    function applyCustomBackground(value) {
+      const bg = normalizeBg(value);
+      bgValue = bg;
+      if (bg === bgApplied) return; // 没变就不重写：几 MB 的字符串每次重塞会卡
+      bgApplied = bg;
+      syncBackground();
+    }
+
+    function attachBackdrop(el) {
+      backdropEl = el;
+      syncBackground();
+    }
+
+    function detachBackdrop(el) {
+      if (backdropEl !== el) return;
+      backdropEl = null;
+      bgApplied = null;
+    }
+
+    // 内嵌图片（data URL）识别。设置面板靠它决定要不要把值放进输入框。
+    function isInlineBg(value) {
+      return /^(?:url\(\s*['"]?\s*)?data:/i.test(String(value == null ? '' : value).trim());
+    }
+
+    // 内嵌图片的摘要：别把几 MB 的 base64 显示出来，只报个大小。
+    function inlineBgLabel(value) {
+      const chars = String(value == null ? '' : value).length;
+      const kb = Math.round((chars * 3) / 4 / 1024);
+      return '已选内嵌图片 · 约 ' + (kb >= 1024 ? (kb / 1024).toFixed(1) + ' MB' : kb + ' KB');
+    }
+    /* bg-apply:end */
 
     const ICONS = {
       turns: ['M2 4h10', 'M2 8h10', 'M2 12h6'],
@@ -3534,8 +3624,10 @@ html:root body ::-webkit-scrollbar-thumb:active {
           h('input', {
             type: 'text',
             className: 'dsh-hud-settings__num',
-            value: config.bg || '',
-            placeholder: 'url("...") / 渐变',
+            // 内嵌图片不塞进输入框：几 MB 的 data URL 放进去，点一下都要卡死。
+            // 有图时只显示摘要，要清掉按旁边的「清除」。
+            value: isInlineBg(config.bg) ? '' : (config.bg || ''),
+            placeholder: isInlineBg(config.bg) ? inlineBgLabel(config.bg) : 'url("...") / 渐变',
             onChange: (event) => update({ bg: event.target.value }),
           }),
           h('input', {
@@ -3543,13 +3635,21 @@ html:root body ::-webkit-scrollbar-thumb:active {
             accept: 'image/*',
             className: 'dsh-hud-settings__file',
             onChange: (event) => {
-              const file = event.target.files && event.target.files[0];
+              const input = event.target;
+              const file = input.files && input.files[0];
               if (!file) return;
               const reader = new FileReader();
               reader.onload = () => update({ bg: 'url("' + String(reader.result) + '")' });
               reader.readAsDataURL(file);
+              // 清掉选中值，同一个文件才能再选一次。
+              try { input.value = ''; } catch (error) { /* keep */ }
             },
-          }))),
+          }),
+          isInlineBg(config.bg) ? h('button', {
+            type: 'button',
+            className: 'dsh-hud-settings__clear',
+            onClick: () => update({ bg: '' }),
+          }, '清除') : null)),
         row('轻量模式 · Lite mode', toggle('lite')),
         h('div', { className: 'dsh-hud-settings__foot' },
           h('button', {
@@ -4007,6 +4107,7 @@ html:root body ::-webkit-scrollbar-thumb:active {
           const canvas = document.createElement('canvas');
           layer.appendChild(canvas);
           document.body.appendChild(layer);
+          attachBackdrop(layer);
           const g = canvas.getContext('2d');
           const still = window.matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -4123,6 +4224,7 @@ html:root body ::-webkit-scrollbar-thumb:active {
             document.removeEventListener('visibilitychange', start);
             still.removeEventListener('change', start);
             mo.disconnect();
+            detachBackdrop(layer);
             layer.remove();
           };
         });
@@ -4174,9 +4276,7 @@ html:root body ::-webkit-scrollbar-thumb:active {
             if (config.lite) document.body.dataset.hudLite = 'true';
             else delete document.body.dataset.hudLite;
 
-            const bg = String(config.bg || '').trim();
-            if (bg) document.documentElement.style.setProperty('--hud-bg', bg);
-            else document.documentElement.style.removeProperty('--hud-bg');
+            applyCustomBackground(config.bg);
           };
           apply();
           const onHud = () => apply();
@@ -4198,12 +4298,7 @@ html:root body ::-webkit-scrollbar-thumb:active {
         ctx.effect(() => {
           const api = {
             get: () => readHudConfig(),
-            set(patch) {
-              const next = Object.assign(readHudConfig(), patch || {});
-              try { localStorage.setItem(HUD_KEY, JSON.stringify(next)); } catch (error) { /* private mode */ }
-              window.dispatchEvent(new CustomEvent('blockade-alter:hud'));
-              return next;
-            },
+            set: (patch) => writeHudConfig(patch),
             reset() {
               try { localStorage.removeItem(HUD_KEY); } catch (error) { /* private mode */ }
               window.dispatchEvent(new CustomEvent('blockade-alter:hud'));

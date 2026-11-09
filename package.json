@@ -1,6 +1,6 @@
 {
   "name": "@local/dsh-blockade-skin-alter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": false,
   "type": "module",
   "description": "全鲸封锁：基于封锁橙的 DSH 皮肤。深空星点与神经连线背景，主题色可调（默认深海蓝 #4C6AFC），与灵魂狭间（dsh-chara-soul）同一套风格，两边都装时主题色联动。",
