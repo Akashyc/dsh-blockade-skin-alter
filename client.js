@@ -2043,11 +2043,6 @@ html:root body [class*="_overlay"]:has([class*="_navList"]) > [class*="_panel"] 
   transform: perspective(1000px)
              rotateY(var(--hud-settings-tilt, -6.5deg))
              rotateX(var(--hud-settings-tilt-x, 1.6deg));
-  /* Clearer labels: the panel is translucent, so text reads a step brighter
-     than the app-wide values (which are tuned for opaque surfaces). */
-  --dsw-alias-label-primary: rgba(248, 250, 255, 0.98);
-  --dsw-alias-label-secondary: rgba(232, 238, 246, 0.82);
-  --dsw-alias-label-tertiary: rgba(214, 222, 232, 0.74);
   /* Hinge slightly above the middle: the sheet reads as leaning back. */
   transform-origin: 50% 45%;
   box-shadow:
@@ -2059,12 +2054,57 @@ html:root body [class*="_overlay"]:has([class*="_navList"]) > [class*="_panel"] 
     0 34px 72px rgba(0, 0, 0, 0.30);
 }
 
+/* Clearer labels: the panel is translucent, so text reads a step brighter
+   than the app-wide values (which are tuned for opaque surfaces). Dark theme
+   only: in light theme the host's controls stay white, and white labels on
+   them were unreadable. */
+html:root body[data-ds-dark-theme] [class*="_overlay"]:has([class*="_navList"]) > [class*="_panel"] {
+  --dsw-alias-label-primary: rgba(248, 250, 255, 0.98);
+  --dsw-alias-label-secondary: rgba(232, 238, 246, 0.82);
+  --dsw-alias-label-tertiary: rgba(214, 222, 232, 0.74);
+}
+
 /* The panel is nearly clear now, so labels get ONE flat dark shadow for
    contrast — not the body's three-layer projection, whose white ghost layer is
    what made small settings text look out of focus. */
-html:root body [class*="_overlay"]:has([class*="_navList"]) [class*="_panel"],
-html:root body [class*="_overlay"]:has([class*="_navList"]) [class*="_panel"] * {
+html:root body[data-ds-dark-theme] [class*="_overlay"]:has([class*="_navList"]) [class*="_panel"],
+html:root body[data-ds-dark-theme] [class*="_overlay"]:has([class*="_navList"]) [class*="_panel"] * {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+}
+
+/* 浅色主题：设置面板换成浅色磨砂，标签用宿主的深色字，宿主的白底控件才看得清。 */
+html:root body:not([data-ds-dark-theme]) [class*="_overlay"]:has([class*="_navList"]) > [class*="_panel"] {
+  background: var(--hud-settings-fill, rgba(246, 247, 250, 0.96));
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 42%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 0 0 1px rgba(20, 22, 26, 0.12),
+    0 10px 26px rgba(15, 18, 24, 0.16),
+    0 34px 72px rgba(15, 18, 24, 0.14);
+}
+
+html:root body:not([data-ds-dark-theme]) [class*="_overlay"]:has([class*="_navList"]) [class*="_navCell"] {
+  background: rgba(20, 22, 26, 0.04);
+  box-shadow: inset 0 0 0 0.5px rgba(20, 22, 26, 0.08);
+}
+
+html:root body:not([data-ds-dark-theme]) [class*="_overlay"]:has([class*="_navList"]) [class*="_navCell"]:hover,
+html:root body:not([data-ds-dark-theme]) [class*="_overlay"]:has([class*="_navList"]) [class*="_navCell"]:is([aria-current="true"], [class*="active"]) {
+  background: rgba(20, 22, 26, 0.08);
+}
+
+/* 吸顶栏：dshmarket 拿 --dsw-alias-bg-base 当遮挡底色，本皮肤把它设成了
+   全透明好露出星空，结果一滚动卡片就从标题栏底下透出来、文字叠在一起。给它们一层实底。 */
+html:root body [class*="_stickyHead"],
+html:root body [data-dsh-market-plugins-tab="true"]:not([data-dsh-market-fullscreen="true"]) :is([class$="_head"], [class*="_head "], [class$="_cats"], [class*="_cats "]) {
+  background: var(--dsw-alias-bg-overlay);
+  backdrop-filter: blur(12px);
+}
+
+/* 浮层：dshmarket 的「任务」面板用 bg-layer-1 当底，本皮肤里它只有一半不透明，下面的卡片字全透上来。 */
+html:root body [class*="_opPanel"] {
+  background: var(--dsw-alias-bg-overlay);
+  backdrop-filter: blur(14px);
 }
 
 html:root body [class*="_overlay"]:has([class*="_navList"]) [class*="_mask"] {
@@ -3456,7 +3496,6 @@ html:root body ::-webkit-scrollbar-thumb:active {
       const update = props.update;
       const [hsv, setHsv] = React.useState(() => rgbToHsv(hexToRgb(accent)));
       const [hexText, setHexText] = React.useState(accent);
-      const svRef = React.useRef(null);
 
       // 外部改了色（预设、恢复默认、灵魂狭间联动）：同步色盘；灰色保留原来的色相
       React.useEffect(() => {
@@ -3527,11 +3566,14 @@ html:root body ::-webkit-scrollbar-thumb:active {
             key: 'custom',
             className: 'ba-pal__swatch ba-pal__swatch--custom',
             'aria-pressed': !preset,
-            onClick: () => svRef.current && svRef.current.focus(),
+            // 色盘一直显示着，聚焦它看不出变化；改成选中 HEX 输入框，直接敲色值。
+            onClick: (event) => {
+              const input = event.currentTarget.closest('.ba-pal').querySelector('.ba-pal__fields input');
+              if (input) { input.focus(); input.select(); }
+            },
           }, h('i', { 'aria-hidden': true }, '+'), '自定义')),
         h('div', { className: 'ba-pal__picker' },
           h('div', {
-            ref: svRef,
             className: 'ba-pal__sv',
             role: 'slider',
             tabIndex: 0,
