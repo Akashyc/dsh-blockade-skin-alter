@@ -911,7 +911,8 @@ html:root body [data-chat-flow-kind="user"]::before {
 /* Code blocks: a terminal-ish plate — darker than the page, hairline frame and
    a lit top edge. */
 html:root body [data-chat-flow-kind] pre {
-  background: rgba(6, 7, 9, 0.72);
+  /* 跟随明暗主题：原来写死深色，浅色主题下成了黑底深字。 */
+  background: var(--dsw-alias-markdown-code-block);
   border: 0.5px solid var(--dsw-alias-border-l1);
   border-top: 1.5px solid color-mix(in srgb, var(--ba-ac) 45%, transparent);
   border-radius: 2px;
@@ -924,8 +925,12 @@ html:root body [data-chat-flow-kind] pre code {
   line-height: 1.55;
 }
 
+html:root body[data-ds-dark-theme] [data-chat-flow-kind] pre {
+  background: rgba(6, 7, 9, 0.72);
+}
+
 html:root body [data-chat-flow-kind] :not(pre) > code {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--dsw-alias-markdown-inline-code);
   border-radius: 2px;
   padding: 0.1em 0.35em;
 }
@@ -1227,7 +1232,8 @@ html:root[data-os="win"] [class*="_overlay"]:has([class*="_navList"]) > [class*=
 }
 
 html:root[data-os="win"] [data-slot="conversation.composer"] [class*="_card"] {
-  background: linear-gradient(180deg, rgba(28, 29, 33, 0.92), rgba(20, 21, 24, 0.88));
+  /* 跟随明暗主题：原来写死深色，浅色主题下输入框成了一块黑板。 */
+  background: var(--dsw-alias-bg-overlay);
 }
 
 html:root[data-os="win"] [class*="_sidebarCol"],
