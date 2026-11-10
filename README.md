@@ -8,6 +8,29 @@ DeepSeek Harness 网页界面的封锁风 HUD 皮肤，从「封锁橙 dsh 皮�
 
 > 同人作品，非官方。与 Ubisoft、Massive Entertainment 无关。「Tom Clancy's The Division」是其所有者的商标。
 
+## 安装
+
+1. 到 [Releases](https://github.com/Akashyc/dsh-blockade-skin-alter/releases) 下载最新版的 `dsh-blockade-skin-alter.tgz` 或 Source code（zip），解压到任意目录（路径可以带空格）。也可以直接 `git clone` 本仓库。
+2. 在 DeepSeek Harness 里执行：
+
+   ```text
+   plugin_manager install_bundle "/解压后的路径/dsh-blockade-skin-alter"
+   ```
+
+3. 完全退出客户端再打开：macOS 按 Cmd+Q；Windows 关窗口后确认托盘图标也退出了。只按 Cmd+R / Ctrl+R 刷新页面，客户端模块可能还是旧的缓存。
+
+装了原版「封锁橙」的，建议先卸载它，两张皮肤叠着用没意义。
+
+**更新**：下载新版解压，覆盖原来的目录，再完全退出客户端重开。
+
+**卸载**：
+
+```text
+plugin_manager remove_bundle @local/dsh-blockade-skin-alter
+```
+
+设置存在浏览器 localStorage 里，卸载后不会自动删除，要清干净可以在开发者工具里删掉。
+
 ## 和封锁橙相比改了什么
 
 - **主题色可调**：7 个预设（深海蓝、封锁橙、信号青、星云紫、樱粉、皇冠金、极光绿）加自制色盘（饱和度/明度方块、色相条、HEX、R/G/B），默认深海蓝 `#4C6AFC`。原来写死的橙色全部跟着主题色走；底色上的小字、主按钮上的字由主题色自动推算，保证看得清。
@@ -32,6 +55,14 @@ DeepSeek Harness 网页界面的封锁风 HUD 皮肤，从「封锁橙 dsh 皮�
 | 节点脉动 | 亮节点缓慢呼吸；默认关，要「神经连线」开着才看得见 |
 | 自定义背景 | 任意 CSS 图片值或本地图片，代替深空渐变，星点和连线照样叠在上面；本地图片建议 3 MB 以内，太大存不进本地设置时会弹窗提示 |
 | 轻量模式 | 去掉模糊和动效，给性能弱的机器 |
+
+在开发者工具的控制台里也能改：
+
+```js
+__blockadeAlter.hud.get()
+__blockadeAlter.hud.set({ accent: '#2EC4B6' })
+__blockadeAlter.hud.reset()
+```
 
 ## 字体
 
@@ -63,10 +94,6 @@ DeepSeek Harness 网页界面的封锁风 HUD 皮肤，从「封锁橙 dsh 皮�
 |---|---|
 | 「封锁橙 / Blockade Orange」dsh 皮肤插件 2.3.2，作者 之一ONETHING（[B 站介绍视频](https://www.bilibili.com/video/BV1CXxY6KEtS/)） | 本包的底子：半透明悬浮面板、HUD 读数、四角刻标、菜单悬浮反馈等整套样式与代码。MIT 许可，原版权声明保留在 `LICENSE` |
 | [TangMuLiEath/dsh-neural-startup](https://github.com/TangMuLiEath/dsh-neural-startup) | 深空神经核心的视觉意象，背景的星空与神经连线由此而来（自己用 WebGL / canvas 重写，没有拷贝代码） |
-
-## 安装与卸载
-
-见 `INSTALL-zh.txt`。
 
 ## 署名与商业使用
 

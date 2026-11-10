@@ -15,8 +15,7 @@
     "client.js",
     "cordis.patch.yml",
     "locale/*.json",
-    "icon.svg",
-    "NOTICE.md"
+    "icon.svg"
   ],
   "dsh": {
     "bundle": {
