@@ -1,0 +1,38 @@
+name: 价格快照
+
+# 每天抓一次 DeepSeek 官方定价页和峰谷时钟，价格、时段或节假日变了才提交 data/prices.json。
+# 装好的插件每天从 jsDelivr / GitHub 取这份文件，不用每台机器去抓官方页。
+on:
+  schedule:
+    - cron: '17 23 * * *' # 北京时间 07:17，早于第一个高峰时段
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prices
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node scripts/fetch-prices.mjs
+      - run: npm test
+      - name: 有变化才提交
+        run: |
+          if git diff --quiet -- data/prices.json; then
+            echo "价格没变"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/prices.json
+          git commit -m "🔧 chore: 更新价格快照"
+          git push

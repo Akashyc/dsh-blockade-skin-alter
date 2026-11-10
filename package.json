@@ -1,8 +1,12 @@
 {
   "name": "@local/dsh-blockade-skin-alter",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": false,
   "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "vendor": "node scripts/vendor-gsap.mjs"
+  },
   "description": "全鲸封锁：基于封锁橙的 DSH 皮肤。深空星点与神经连线背景，主题色可调（默认深海蓝 #4C6AFC），与灵魂狭间（dsh-chara-soul）同一套风格，两边都装时主题色联动。",
   "exports": {
     ".": "./index.js",
@@ -15,7 +19,8 @@
     "client.js",
     "cordis.patch.yml",
     "locale/*.json",
-    "icon.svg"
+    "icon.svg",
+    "data/prices.json"
   ],
   "dsh": {
     "bundle": {
@@ -28,5 +33,8 @@
         "@deepseek-ai/dsh-client-ui-theme"
       ]
     }
+  },
+  "devDependencies": {
+    "gsap": "^3.15.1"
   }
 }
